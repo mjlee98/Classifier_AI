@@ -7,12 +7,12 @@ def pdf(x, mean, std):
 	return exponential / (std * math.sqrt(2*math.pi))
 
 def naive_bayes(training_file, testing_file):
-	
+
 	#find number of attributes
 	l = training_file.readline()
 	training_file.seek(0)
 	n = len(l.split(","))
-	
+
 	#initialise standard deviation and mean of each attribute
 	yes_mean = [0]*(n-1)
 	no_mean = [0]*(n-1)
@@ -20,7 +20,7 @@ def naive_bayes(training_file, testing_file):
 	no_std = [0]*(n-1)
 	num_yes = 0
 	num_no = 0
-	
+
 	#calculate mean
 	for line in training_file:
 		attributes = line.rstrip().split(",")
@@ -37,14 +37,14 @@ def naive_bayes(training_file, testing_file):
 	for i in range(0, len(yes_mean)):
 		yes_mean[i] = yes_mean[i] / num_yes
 		no_mean[i] = no_mean[i] / num_no
-	
+
 	#reset training_file pointer
 	training_file.seek(0)
-	
+
 	#calculate standard deviation
 	for line in training_file:
 		attributes = line.rstrip().split(",")
-		
+
 		#for each attribute (not including class)
 		for i in range(0, n-1):
 			if (attributes[n-1] == 'yes'):
@@ -54,27 +54,27 @@ def naive_bayes(training_file, testing_file):
 	for i in range(0, n-1):
 		yes_std[i] = math.sqrt(yes_std[i] / (num_yes-1))
 		no_std[i] = math.sqrt(no_std[i] / (num_no-1))
-		
+
 	#use naive bayes on test data
 	for line in testing_file:
 		attributes = line.rstrip().split(",")
-		
+
 		#probability of yes and no
 		probability_yes = 1
 		probability_no = 1
-		
+
 		#calculate probability for each line
 		for i in range(0, n-1):
 			probability_yes *= pdf(float(attributes[i]), yes_mean[i], yes_std[i])
 			probability_no *= pdf(float(attributes[i]), no_mean[i], no_std[i])
 		probability_yes *= (num_yes / (num_yes + num_no))
 		probability_no *= (num_no / (num_yes + num_no))
-		
+
 		if (probability_yes >= probability_no):
 			print('yes')
 		else:
 			print('no')
-		
+
 class Node:
 	def __init__(self,attribute):
 		self.attribute = attribute
@@ -82,7 +82,7 @@ class Node:
 		self.medium = []
 		self.high = []
 		self.very_high = []
-		
+
 def entropy(data):
 	#count yes/no ratio
 	yes = 0
@@ -94,7 +94,7 @@ def entropy(data):
 			no += 1
 		else:
 			raise Exception("Invalid class")
-	
+
 	P_yes = yes/(yes+no)
 	P_no = no/(yes+no)
 	if yes == 0 and no != 0:
@@ -107,13 +107,13 @@ def entropy(data):
 
 #choose the attribute with most information gain
 def choose_attribute(data,attributes_to_use):
-	
+
 	max_attribute = attributes_to_use[0]
 	max_info_gain = -1
-	
+
 	#current entropy
 	T1 = entropy(data)
-	
+
 	#calculate entropy of each attribute
 	for attribute_no in attributes_to_use:
 		#entropy after split
@@ -145,14 +145,14 @@ def choose_attribute(data,attributes_to_use):
 			max_attribute = attribute_no
 			max_info_gain = T1 - T2
 	return max_attribute
-		
+
 def decision_tree_recursion(data,attributes_to_use,default):
-		
+
 		if len(data) == 0:
 			return default
-		
+
 		else:
-			
+
 			all_same = True
 			yn = data[0][-1]
 			for row in data:
@@ -162,7 +162,7 @@ def decision_tree_recursion(data,attributes_to_use,default):
 			#if all classes are same
 			if all_same:
 				return yn
-		
+
 			elif len(attributes_to_use) == 0:
 				yes = 0
 				no = 0
@@ -178,7 +178,7 @@ def decision_tree_recursion(data,attributes_to_use,default):
 				else:
 					return "no"
 
-			
+
 
 			else:
 				best = choose_attribute(data, attributes_to_use)
@@ -204,8 +204,8 @@ def decision_tree_recursion(data,attributes_to_use,default):
 				for attribute in attributes_to_use:
 					if attribute != best:
 						new_attributes.append(attribute)
-				
-				
+
+
 				#recursion
 				yes = 0
 				no = 0
@@ -218,38 +218,38 @@ def decision_tree_recursion(data,attributes_to_use,default):
 						raise Exception("invalid class")
 				if yes >= no:
 					default = "yes"
-							
+
 				else:
 					default = "no"
-				
+
 				split_node.low = decision_tree_recursion(low,new_attributes,default)
 				split_node.medium = decision_tree_recursion(medium,new_attributes,default)
 				split_node.high = decision_tree_recursion(high,new_attributes,default)
 				split_node.very_high = decision_tree_recursion(very_high,new_attributes,default)
 
 				return split_node
-	
+
 def decision_tree(training_file, testing_file):
-	
+
 	#Data stored in 2D array
 	data = training_file.readlines()
 	i = 0
 	while i < len(data):
 		data[i] = data[i].rstrip().split(',')
 		i += 1
-	
+
 	samples = testing_file.readlines()
 	i = 0
 	while i < len(samples):
 		samples[i] = samples[i].rstrip().split(',')
 		i += 1
-	
+
 	attributes_to_use = []
 	j = 0
 	while j < len(data[0]) - 1:
 		attributes_to_use.append(j)
 		j += 1
-	
+
 	yes = 0
 	no = 0
 	for row in data:
@@ -262,24 +262,9 @@ def decision_tree(training_file, testing_file):
 	else:
 		dt = decision_tree_recursion(data,attributes_to_use,"no")
 
-	# for sample in samples:
-	# 	root = dt
-	# 	while root != "yes" and root != "no":
-	# 		#check what's splitting at this node
-	# 		if sample[root.attribute] == "low":
-	# 			root = root.low
-	# 		elif sample[root.attribute] == "medium":
-	# 			root = root.medium
-	# 		elif sample[root.attribute] == "high":
-	# 			root = root.high
-	# 		elif sample[root.attribute] == "very high":
-	# 			root = root.very_high
-	# 	print(root)
-		
-	##################################################
-	
+
 	dt = dt.very_high.high.high.high.low.low.high
-	
+
 	print("root",dt.attribute)
 	if type(dt.low) == str:
 		print(dt.low)
@@ -290,19 +275,19 @@ def decision_tree(training_file, testing_file):
 		print(dt.medium)
 	else:
 		print(dt.medium.attribute)
-	
+
 	if type(dt.high) == str:
 		print(dt.high)
 	else:
 		print(dt.high.attribute)
-	
+
 	if type(dt.very_high) == str:
 		print(dt.very_high)
 	else:
 		print(dt.very_high.attribute)
-		
-		
-		
+
+
+
 
 
 #command line arguments
@@ -318,7 +303,7 @@ if (algorithm == 'NB'):
 	naive_bayes(training_file, testing_file)
 else:
 	decision_tree(training_file, testing_file)
-	
+
 #close files
 training_file.close()
 testing_file.close()
